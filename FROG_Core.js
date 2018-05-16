@@ -59,7 +59,7 @@ FROG.Core = FROG.Core || {};
 
         // Arrays
         if (Array.isArray(objRead)) {
-            for (var i in objRead) {
+            for (var i=0; i<objRead.length; i++) {
                 var value = objRead[i];
                 if (value !== "") {
                     if (!isNaN(value)) value = parseFloat(value);
