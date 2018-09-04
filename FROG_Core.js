@@ -10,7 +10,7 @@ var FROG = FROG || {};
 FROG.Core = FROG.Core || {};
 
 /*:
- * @plugindesc v1.0.2 Core for FROG Plugins
+ * @plugindesc v1.0.3 Core for FROG Plugins
  * @author Frogboy
  *
  * @help
@@ -40,9 +40,10 @@ FROG.Core = FROG.Core || {};
  * Changelog
  * ============================================================================
  *
- * Version 1.0   - Initial release
+ * Version 1.0.0 - Initial release
  * Version 1.0.1 - Bug fix
  * Version 1.0.2 - Bug fix
+ * Version 1.0.3 - Added some functionality
  *
  * ============================================================================
  */
@@ -56,26 +57,15 @@ FROG.Core.badGaugeEndColor = "#5080A0";
  * @param {object} objWrite - Object that you want to store the converted parameters into (required)
  */
 FROG.Core.jsonParams = function (objRead, objWrite, level) {
+    var self = this;
+    objWrite = objWrite || {};
     level = level || 1;
     if (level >= 100) return [];
 
     // Arrays
     if (Array.isArray(objRead)) {
         for (var i=0; i<objRead.length; i++) {
-            var value = objRead[i];
-            if (value !== "") {
-                if (!isNaN(value)) value = parseFloat(value);
-                else if (value == "true") value = true;
-                else if (value == "false") value = false;
-                else {
-                    try {
-                        value = JSON.parse(value);
-                    }
-                    catch (e) {
-                        value = value;
-                    }
-                }
-            }
+            var value = formatValue(objRead[i]);
 
             if (typeof value != "object") {
                 objWrite.push(value);
@@ -89,20 +79,7 @@ FROG.Core.jsonParams = function (objRead, objWrite, level) {
     else {
         // Objects
         Object.keys(objRead).forEach(function(key, index) {
-            var value = objRead[key];
-            if (value !== "") {
-                if (!isNaN(value)) value = parseFloat(value);
-                else if (value == "true") value = true;
-                else if (value == "false") value = false;
-                else {
-                    try {
-                        value = JSON.parse(value);
-                    }
-                    catch (e) {
-                        value = value;
-                    }
-                }
-            }
+            var value = formatValue(objRead[key]);
 
             if (typeof value != "object") {
                 objWrite[makeKey(key)] = value;
@@ -114,6 +91,25 @@ FROG.Core.jsonParams = function (objRead, objWrite, level) {
         });
     }
 
+    // Formats and types parameter data
+    function formatValue(value) {
+        if (value !== "") {
+            if (!isNaN(value)) value = parseFloat(value);
+            else if (value == "true") value = true;
+            else if (value == "false") value = false;
+            else {
+                try {
+                    value = JSON.parse(value);
+                }
+                catch (e) {
+                    value = value;
+                }
+            }
+        }
+        return value;
+    }
+
+    // Converts parameter names into camel case
     function makeKey(param) {
         return param.slice(0, 1).toLowerCase() + param.slice(1).replace(/[^\w]/gi, "");
     }
@@ -262,6 +258,45 @@ FROG.Core.shuffleArray = function (array) {
     }
 
     return array;
+}
+
+/** Returns the nth index that matches in the array
+ * @param {array} array - An array (required)
+ * @param {variant} search - Search in the array for this (required)
+ * @param {number} nth - The number fo times to match the search
+ * @returns {number} Returns the nths index of the search criteria or -1 if n matches not found
+ */
+FROG.Core.nthIndexOf = function (array, search, nth) {
+    nth = nth || 1;
+    var index = -1;
+    var start = 0;
+
+    for (var i=0; i<nth; i++) {
+        index = array.indexOf(search, start);
+        start = index + 1;
+    }
+
+    return index;
+}
+
+/** Used for parameter color picker.  Accepts hex, rgb or the predefined system colors.
+ * @param {string} color - The color to either convert or return
+ * @returns {string} Returns a color that RPG Maker can identify
+ */
+Window_Base.prototype.frogParamColor = function (color) {
+    if (color) {
+        if (color.toString().substr(0, 1) == "#" || color.toString().substr(0, 3) == "rgb" || color.toString().indexOf("-") === -1) return color;
+        var colorNumber = parseInt(color) || 0;
+        if (!isNaN(colorNumber) && colorNumber < 32) return this.textColor(colorNumber);
+    }
+    return "#5080A0";
+}
+
+/** Changes the font size
+ * @param {number} size - Size of the font in pixel height
+ */
+Window_Base.prototype.changeFontSize = function(size) {
+    this.contents.fontSize = (size > -1) ? size : 28;
 }
 
 /** Creates an object out of name:value paired Plugin Command arguments
